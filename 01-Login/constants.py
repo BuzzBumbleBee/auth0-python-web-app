@@ -18,4 +18,5 @@ PROFILE_KEY = 'profile'
 REDIRECT_URI_KEY = 'redirect_uri'
 SECRET_KEY = 'ThisIsTheSecretKey'
 JWT_PAYLOAD = 'jwt_payload'
+MANAGEMENT_JWT = 'AUTH0_MAN_JWT'
 

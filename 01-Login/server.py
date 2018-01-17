@@ -15,8 +15,9 @@ from flask import url_for
 from flask_oauthlib.client import OAuth
 from six.moves.urllib.parse import urlencode
 import requests
-
+import rule_functions
 import constants
+from urllib.parse import unquote
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
@@ -27,6 +28,8 @@ AUTH0_CLIENT_ID = env.get(constants.AUTH0_CLIENT_ID)
 AUTH0_CLIENT_SECRET = env.get(constants.AUTH0_CLIENT_SECRET)
 AUTH0_DOMAIN = env.get(constants.AUTH0_DOMAIN)
 AUTH0_AUDIENCE = env.get(constants.AUTH0_AUDIENCE)
+AUTH0_MANAGEMENT_JWT = env.get(constants.MANAGEMENT_JWT)
+
 if AUTH0_AUDIENCE is '':
     AUTH0_AUDIENCE = 'https://' + AUTH0_DOMAIN + '/userinfo'
 
@@ -49,10 +52,13 @@ def handle_auth_error(ex):
     return response
 
 
-@APP.errorhandler(Exception)
-def handle_auth_error(ex):
-    response = jsonify(message=ex.message)
-    return response
+#@APP.errorhandler(Exception)
+#def handle_auth_error(ex):
+#    try :
+#        response = jsonify(message=ex.message)
+#        return response
+#    except :
+#        return "Unable to process error"
 
 oauth = OAuth(APP)
 
@@ -122,9 +128,38 @@ def logout():
     return redirect(auth0.base_url + '/v2/logout?' + urlencode(params))
 
 
+@APP.route('/get_rules')
+@requires_auth
+def get_rules():
+    variable = request.args.get('variable')
+    pattern = request.args.get('pattern')
+
+    pattern = unquote(pattern, 'utf-8')
+    variable = unquote(variable, 'utf-8')
+
+    print(variable)
+
+    if '"' in pattern:
+        pattern = pattern.replace('"', '')
+
+    if variable is None or pattern is None:
+        return redirect(url_for("home"))
+
+    try :
+        rules = rule_functions.getRulesMatching(variable, pattern, AUTH0_DOMAIN, AUTH0_MANAGEMENT_JWT)
+    except Exception:
+        rules = []
+
+    if len(rules) < 1:
+        return redirect(url_for("dashboard"))
+
+    return render_template("list_rules.html", rules=rules)
+
+
 @APP.route('/dashboard')
 @requires_auth
 def dashboard():
+
     return render_template('dashboard.html',
                            userinfo=session[constants.PROFILE_KEY],
                            userinfo_pretty=json.dumps(session[constants.JWT_PAYLOAD], indent=4))
