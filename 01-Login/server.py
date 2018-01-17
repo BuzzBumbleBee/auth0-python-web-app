@@ -52,13 +52,13 @@ def handle_auth_error(ex):
     return response
 
 
-#@APP.errorhandler(Exception)
-#def handle_auth_error(ex):
-#    try :
-#        response = jsonify(message=ex.message)
-#        return response
-#    except :
-#        return "Unable to process error"
+@APP.errorhandler(Exception)
+def handle_auth_error(ex):
+    try :
+        response = jsonify(message=ex.message)
+        return response
+    except :
+        return "Unable to process error"
 
 oauth = OAuth(APP)
 
